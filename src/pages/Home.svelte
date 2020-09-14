@@ -2,27 +2,48 @@
   import { onMount } from "svelte";
 
   import PostForm from "../components/PostForm.svelte";
-  
+
   const baseUrl = "https://ndb99xkpdk.execute-api.eu-west-2.amazonaws.com/dev";
   let posts = [];
-
+  let selectedPost = {
+    title: "",
+    body: "",
+    id: null,
+  };
   onMount(async () => {
     const res = await fetch(baseUrl + "/posts");
     posts = await res.json();
-    console.log(posts);
   });
 
-  const editPost = (post) => {
-    console.log(post);
+  const createPost = ({ detail: post }) => {
+    const postIndex = posts.findIndex((p) => p.id === post.id);
+    if (postIndex !== -1) {
+      const a = [...posts];
+      a[postIndex] = post;
+      posts = a;
+    } else {
+      posts = [post, ...posts];
+    }
+    selectedPost = {
+      title: "",
+      body: "",
+      id: null,
+    };
   };
-  const delPost = (post) => {
-    console.log(post);
+  const delPost = async (id) => {
+    const res = await fetch(baseUrl + "/post/" + id, { method: "DELETE" });
+    if (res) {
+      posts = posts.filter((p) => p.id !== id);
+    }
+  };
+  const editPost = (post) => {
+    selectedPost = post;
   };
 </script>
 
 <div class="row">
   <div class="card s6">
-    <PostForm />
+    <PostForm on:postCreated={createPost} {selectedPost} />
   </div>
 </div>
 <div class="row">
@@ -40,7 +61,7 @@
           </div>
           <div class="card-action">
             <button on:click={() => editPost(post)}>Edit</button>
-            <button on:click={() => delPost(post)}>Delete</button>
+            <button on:click={() => delPost(post.id)}>Delete</button>
           </div>
         </div>
       </div>
